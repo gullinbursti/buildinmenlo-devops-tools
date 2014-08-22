@@ -6,14 +6,16 @@ import MySQLdb
 import sys
 import logging
 import re
+import os
 import random
+import ConfigParser
 
-USER = 'pedro'
-PASSWORD = 'yOCNdiUK6stWpT37Er2cGI6u5nNa1AWY9JBIPZZac4c4ALyKu9RadGzdRYcAJ5APK8'
-HOST = 'selfieclub00.dev.droun.in'
-DATABASE = 'hotornot-dev'
+USER = None
+PASSWORD = None
+HOST = None
+DATABASE = None
+
 NAME_PREFIX_FILE = './resources/name_prefix-us_common.txt'
-
 NAME_PREFIX_LENGTH_LIMIT = 15
 NAME_PREFIX_REGEX = '^\w+$'
 NAME_SUFFIX_VALUES = '0123456789'
@@ -21,6 +23,11 @@ NAME_SUFFIX_LENGTH = 10
 PHONE_REGEX = '^\+1\d{10}$'
 PHONE_AREACODE_REGEX = '^\+1(\d{3})\d{7}$'
 CLUB_NAME_REGEX = '^\w+$'
+CONFIG_SECTION = 'selfieclub-admin'
+CONFIG_FILE = os.path.join(
+    os.environ['HOME'], '.builtinmenlo', 'devops-tools.cnf')
+LOG_LEVEL = logging.DEBUG
+LOG_FILE = 'club-creator.log'
 DRYRUN_DEFAULT = True
 
 USER_IMAGE = 'http://hotornot-avatars.s3.amazonaws.com/avatarPlaceholder'
@@ -31,10 +38,29 @@ DATABASE_CONNECTION = None
 
 
 def main():
-    logging.basicConfig(level=logging.DEBUG, filename='test.log')
-
+    logging.basicConfig(level=LOG_LEVEL, filename=LOG_FILE)
+    read_configuration()
     args = process_args()
     process_csv(args.csv_files, dryrun=False)
+
+
+def read_configuration():
+    logging.debug("Reading configuration: %s[%s]", CONFIG_FILE, CONFIG_SECTION)
+
+    config = ConfigParser.ConfigParser()
+    config.read(CONFIG_FILE)
+
+    global USER, PASSWORD, HOST, DATABASE
+    USER = config.get(CONFIG_SECTION, 'db_user')
+    PASSWORD = config.get(CONFIG_SECTION, 'db_password')
+    HOST = config.get(CONFIG_SECTION, 'db_host')
+    DATABASE = config.get(CONFIG_SECTION, 'db_database')
+
+    logging.info("Configuration: %s", {
+        'db_user': USER,
+        'db_password': 'XXXXXX',
+        'db_host': HOST,
+        'db_database': DATABASE})
 
 
 def process_csv(files, dryrun=DRYRUN_DEFAULT):
