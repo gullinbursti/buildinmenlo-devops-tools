@@ -101,6 +101,11 @@ def process_new_club(name, phone, dryrun=DRYRUN_DEFAULT):
 
 
 def generate_club_labels(phone):
+    """
+    Note that the return value has labels in order of importance. most
+    important first.  This is important when looking for duplicate
+    clubs.
+    """
     match = re.match(PHONE_AREACODE_REGEX, phone)
     areacode = match.group(1)
     club_labels = (
@@ -115,10 +120,10 @@ def create_all(club_name, club_type, club_description, club_img,
     try:
         connection = get_db_connection()
         cursor = connection.cursor()
-        if club_exists(cursor, club_name, club_type):
+        if club_exists(cursor, club_name, club_labels[0]):
             raise CreateAllException(
-                "Club '{}' with type '{}' already exists.".format(
-                    club_name, club_type))
+                "Club '{}' with label '{}' already exists.".format(
+                    club_name, club_labels[0]))
         owner_id = create_owner(cursor, new_owner['username'],
                                 new_owner['img_url'], new_owner['email'])
         club_id = create_club(cursor, club_name, club_type, owner_id,
@@ -156,16 +161,16 @@ def create_all(club_name, club_type, club_description, club_img,
             cursor.close()
 
 
-def club_exists(cursor, name, club_type):
+def club_exists(cursor, name, club_label):
     cursor.execute(
         """
-        SELECT COUNT(1) FROM club
+        SELECT COUNT(1) FROM club JOIN tbl_club_label_club ON club.id = club_id
             WHERE
                 name = %s
-                AND club_type_id IN (
-                    SELECT id FROM tblClubTypeEnum WHERE club_type = %s);
+                AND clublabel_id = (
+                    SELECT id FROM tbl_club_label WHERE name = %s);
         """,
-        (name, club_type,))
+        (name, club_label,))
     result = cursor.fetchone()
     return result[0] != 0
 
