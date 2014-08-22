@@ -30,12 +30,10 @@ EC2_INSTANCE_INFO = {
 
 
 def main():
-    # logging.basicConfig(level=LOG_LEVEL, filename=LOG_FILE)
     logging.basicConfig(level=LOG_LEVEL)
     read_configuration()
     args = process_args()
     process_instances(args.instance_ids)
-    # process_csv(args.csv_files, dryrun=False)
 
 
 def process_instances(instance_ids):
