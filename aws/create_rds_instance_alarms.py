@@ -21,6 +21,7 @@ LOG_LEVEL = logging.INFO
 LOG_FILE = 'create_rds_instance_alarms.log'
 FREEABLE_MEMORY_RATIO = 0.15
 FREE_STORAGE_SPACE_RATIO = 0.20
+CLOUDWATCH_NAME_PREFIX = 'rds'
 
 EC2_INSTANCE_INFO = {
     'db.t2.micro': {
@@ -75,7 +76,8 @@ def get_instance_info(instance_id):
 
 
 def create_freestoragespace_alarm(cloudwatch_conn, instance_info):
-    name = "{}+FreeStorageSpace".format(instance_info['instance_id'])
+    name = "{}+{}+FreeStorageSpace".format(CLOUDWATCH_NAME_PREFIX,
+                                           instance_info['instance_id'])
     logging.info("Processing: %s", name)
     limit = round(float(instance_info['allocated_storage'])
                   * FREE_STORAGE_SPACE_RATIO)
@@ -99,7 +101,8 @@ def create_freestoragespace_alarm(cloudwatch_conn, instance_info):
 
 
 def create_cpu_alarm(cloudwatch_conn, instance_info):
-    name = "{}+CPUUtilization".format(instance_info['instance_id'])
+    name = "{}+{}+CPUUtilization".format(CLOUDWATCH_NAME_PREFIX,
+                                         instance_info['instance_id'])
     logging.info("Processing: %s", name)
     alarm = boto.ec2.cloudwatch.alarm.MetricAlarm(
         connection=cloudwatch_conn,
@@ -121,7 +124,8 @@ def create_cpu_alarm(cloudwatch_conn, instance_info):
 
 
 def create_freeablememory_alarm(cloudwatch_conn, instance_info):
-    name = "{}+FreeableMemory".format(instance_info['instance_id'])
+    name = "{}+{}+FreeableMemory".format(CLOUDWATCH_NAME_PREFIX,
+                                         instance_info['instance_id'])
     logging.info("Processing: %s", name)
     limit = round(float(instance_info['memory']) * FREEABLE_MEMORY_RATIO)
     alarm = boto.ec2.cloudwatch.alarm.MetricAlarm(
