@@ -16,9 +16,7 @@ CONFIG_SECTION = 'aws'
 CONFIG_FILE = os.path.join(
     os.environ['HOME'], '.builtinmenlo', 'devops-tools.cnf')
 LOG_LEVEL = logging.INFO
-
-AWS_REGION = os.environ.get("AWS_EC2_REGION", "us-east-1")
-TOPIC = 'arn:aws:sns:us-east-1:892810128873:00-ops-selfieclub-monitoring'
+CLOUDWATCH_NAME_PREFIX = 'ec2'
 
 
 def main():
@@ -52,7 +50,7 @@ def alarm_name_prefix(instance_name):
     prefix_list = instance_name.split('.')
     prefix_list.reverse()
     prefix = '.'.join(prefix_list)
-    return prefix
+    return "{}+{}".format(CLOUDWATCH_NAME_PREFIX, prefix)
 
 
 def get_instance_info(instance_id):
@@ -91,9 +89,9 @@ def create_status_alarm(cloudwatch_conn, instance_info):
         period=300,
         evaluation_periods=3,
         dimensions={'InstanceId': instance_info['id']},
-        alarm_actions=[TOPIC],
-        ok_actions=[TOPIC],
-        insufficient_data_actions=[TOPIC])
+        alarm_actions=[AWS_SNS_TOPIC],
+        ok_actions=[AWS_SNS_TOPIC],
+        insufficient_data_actions=[AWS_SNS_TOPIC])
     cloudwatch_conn.put_metric_alarm(alarm)
 
 
@@ -113,9 +111,9 @@ def create_cpu_alarm(cloudwatch_conn, instance_info):
         period=300,
         evaluation_periods=3,
         dimensions={'InstanceId': instance_info['id']},
-        alarm_actions=[TOPIC],
-        ok_actions=[TOPIC],
-        insufficient_data_actions=[TOPIC])
+        alarm_actions=[AWS_SNS_TOPIC],
+        ok_actions=[AWS_SNS_TOPIC],
+        insufficient_data_actions=[AWS_SNS_TOPIC])
     cloudwatch_conn.put_metric_alarm(alarm)
 
 
@@ -135,9 +133,9 @@ def create_swap_alarm(cloudwatch_conn, instance_info):
         period=300,
         evaluation_periods=3,
         dimensions={'InstanceId': instance_info['id']},
-        alarm_actions=[TOPIC],
-        ok_actions=[TOPIC],
-        insufficient_data_actions=[TOPIC])
+        alarm_actions=[AWS_SNS_TOPIC],
+        ok_actions=[AWS_SNS_TOPIC],
+        insufficient_data_actions=[AWS_SNS_TOPIC])
     cloudwatch_conn.put_metric_alarm(alarm)
 
 
@@ -157,9 +155,9 @@ def create_memory_alarm(cloudwatch_conn, instance_info):
         period=300,
         evaluation_periods=3,
         dimensions={'InstanceId': instance_info['id']},
-        alarm_actions=[TOPIC],
-        ok_actions=[TOPIC],
-        insufficient_data_actions=[TOPIC])
+        alarm_actions=[AWS_SNS_TOPIC],
+        ok_actions=[AWS_SNS_TOPIC],
+        insufficient_data_actions=[AWS_SNS_TOPIC])
     cloudwatch_conn.put_metric_alarm(alarm)
 
 
@@ -182,9 +180,9 @@ def create_disk_alarm(cloudwatch_conn, instance_info):
             'InstanceId': instance_info['id'],
             'Filesystem': '/dev/xvda1',
             'MountPath': '/'},
-        alarm_actions=[TOPIC],
-        ok_actions=[TOPIC],
-        insufficient_data_actions=[TOPIC])
+        alarm_actions=[AWS_SNS_TOPIC],
+        ok_actions=[AWS_SNS_TOPIC],
+        insufficient_data_actions=[AWS_SNS_TOPIC])
     cloudwatch_conn.put_metric_alarm(alarm)
 
 
