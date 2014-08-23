@@ -84,7 +84,7 @@ def create_freestoragespace_alarm(cloudwatch_conn, instance_info):
     alarm = boto.ec2.cloudwatch.alarm.MetricAlarm(
         connection=cloudwatch_conn,
         name=name,
-        description='RDS MySQL free storage check for {}'.format(
+        description="RDS MySQL free storage check for '{}'".format(
             instance_info['instance_id']),
         metric='FreeStorageSpace',
         namespace='AWS/RDS',
@@ -107,7 +107,7 @@ def create_cpu_alarm(cloudwatch_conn, instance_info):
     alarm = boto.ec2.cloudwatch.alarm.MetricAlarm(
         connection=cloudwatch_conn,
         name=name,
-        description='RDS MySQL CPU utilization check for {}'.format(
+        description="RDS MySQL CPU utilization check for '{}'".format(
             instance_info['instance_id']),
         metric='CPUUtilization',
         namespace='AWS/RDS',
@@ -131,7 +131,7 @@ def create_freeablememory_alarm(cloudwatch_conn, instance_info):
     alarm = boto.ec2.cloudwatch.alarm.MetricAlarm(
         connection=cloudwatch_conn,
         name=name,
-        description='RDS MySQL freeable memory check for {}'.format(
+        description="RDS MySQL freeable memory check for '{}'".format(
             instance_info['instance_id']),
         metric='FreeableMemory',
         namespace='AWS/RDS',
