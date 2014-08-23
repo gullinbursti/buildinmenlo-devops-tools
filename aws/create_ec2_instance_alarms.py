@@ -145,7 +145,7 @@ def create_memory_alarm(cloudwatch_conn, instance_info):
     alarm = boto.ec2.cloudwatch.alarm.MetricAlarm(
         connection=cloudwatch_conn,
         name=name,
-        description="Swap utilization check for '{}' ({})".format(
+        description="Memory utilization check for '{}' ({})".format(
             instance_info['id'], instance_info['name']),
         metric='MemoryUtilization',
         namespace='System/Linux',
