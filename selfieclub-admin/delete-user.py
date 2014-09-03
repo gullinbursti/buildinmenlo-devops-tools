@@ -1,68 +1,248 @@
 #! /usr/bin/env python
 
+import ConfigParser
 import MySQLdb
+import argparse
+import logging
+import os
 import sys
+from colorlog import ColoredFormatter
+import re
 
-USER = 
-PASSWORD = 
-HOST = 
-DATABASE = 'hotornot-dev'
+USER = None
+PASSWORD = None
+HOST = None
+DATABASE = None
+LOGGER = None
+
+LOG_LEVEL = logging.DEBUG
+LOG_FILE = '/tmp/club-creator.log'
+CONFIG_SECTION = 'selfieclub-admin'
+CONFIG_FILE = os.path.join(
+    os.environ['HOME'], '.builtinmenlo', 'devops-tools.cnf')
 
 
-def delete_user(user_id):
+def main():
+    global LOGGER
+    LOGGER = get_logger()
+    read_configuration()
+    args = process_args()
+    process(args.is_userids, args.user_keys, args.is_dryrun)
+
+
+def process(is_userids, keys, is_dryrun):
     connection = MySQLdb.connect(
         host=HOST,
         db=DATABASE,
         user=USER,
         passwd=PASSWORD)
+    if is_userids:
+        users = get_user_by_id(connection, keys)
+    else:
+        users = get_user_by_name(connection, keys)
+    LOGGER.info("Attempting to delete: %s", users)
+    delete_all(connection, users, is_dryrun)
+    connection.close()
+
+
+def delete_all(connection, users, is_dryrun):
+    for user in users:
+        delete_user(connection, user['id'], user['name'], is_dryrun)
+
+
+def delete_user(connection, user_id, username, is_dryrun):
     cursor = connection.cursor()
+    LOGGER.info("Preparing to delete '%s' (%s):", username, user_id)
+    delete(
+        cursor,
+        'DELETE FROM tblChallengeParticipants WHERE user_id = %s',
+        (user_id,), 'tblChallengeParticipants')
+    delete(
+        cursor,
+        'DELETE FROM tblChallengeVotes WHERE user_id = %s',
+        (user_id,), 'tblChallengeVotes')
+    delete(
+        cursor,
+        'DELETE FROM tblFlaggedUserApprovals WHERE user_id = %s',
+        (user_id,),
+        'tblFlaggedUserApprovals.user_id')
+    delete(
+        cursor,
+        """
+        DELETE FROM tblFlaggedUserApprovals
+            WHERE challenge_id IN (
+                SELECT tblChallenges.id
+                    FROM tblChallenges WHERE tblChallenges.creator_id = %s)
+        """,
+        (user_id,),
+        'tblFlaggedUserApprovals JOIN tblChallenges')
+    delete(
+        cursor,
+        'DELETE FROM tblChallenges WHERE creator_id = %s',
+        (user_id,),
+        'tblChallenges')
+    delete(
+        cursor,
+        'DELETE FROM tblUserPhones WHERE user_id = %s',
+        (user_id,),
+        'tblUserPhones')
+    delete(
+        cursor,
+        'DELETE FROM club_member WHERE user_id = %s',
+        (user_id,),
+        'club_member')
+    delete(
+        cursor,
+        """
+        DELETE from club_member
+            WHERE club_id IN (
+                SELECT club.id FROM club WHERE club.owner_id = %s)
+        """,
+        (user_id,),
+        'club_member')
+    delete(
+        cursor,
+        """
+        DELETE FROM tbl_club_label_club
+            WHERE club_id IN (
+                SELECT club.id FROM club WHERE club.owner_id = %s)
+        """,
+        (user_id,),
+        'tbl_club_label_club')
+    delete(
+        cursor,
+        'DELETE FROM club WHERE owner_id = %s',
+        (user_id,),
+        'club')
+    delete(
+        cursor,
+        'DELETE FROM tblUsers WHERE id = %s',
+        (user_id,),
+        'tblUsers')
+    if not is_dryrun:
+        # connection.commit()
+        pass
+    else:
+        connection.rollback()
+        LOGGER.warn("In *dryrun* mode.  Not deleting user: '%s' (%s)",
+                    username, user_id)
 
-    cursor.execute(
-        'DELETE FROM `tblChallengeVotes` WHERE `user_id` = %s',
-        (user_id,))
-    print("Deleted from tblChallengeVotes: {}".format(cursor.rowcount))
 
-    cursor.execute(
-        'DELETE FROM `tblChallenges` WHERE `creator_id` = %s',
-        (user_id,))
-    print("Deleted from tblChallenges: {}".format(cursor.rowcount))
-
-    cursor.execute(
-        'DELETE FROM `tblUserPhones` WHERE `user_id` = %s',
-        (user_id,))
-    print("Deleted from tblUserPhones: {}".format(cursor.rowcount))
-
-    cursor.execute(
-        'DELETE FROM `club_member` WHERE `user_id` = %s',
-        (user_id,))
-    print("Deleted from club_member: {}".format(cursor.rowcount))
-
-    cursor.execute(
-        'DELETE FROM `tblFlaggedUserApprovals` WHERE `user_id` = %s',
-        (user_id,))
-    print("Deleted from tblFlaggedUserApprovals: {}".format(cursor.rowcount))
-
-    cursor.execute(
-        'DELETE from `club_member` WHERE `club_id` IN (SELECT `id` FROM `club` WHERE `owner_id` = %s)',
-        (user_id,))
-    print("Deleted from club_member: {}".format(cursor.rowcount))
-
-    cursor.execute(
-        'DELETE FROM `club` WHERE `owner_id` = %s',
-        (user_id,))
-    print("Deleted from club: {}".format(cursor.rowcount))
-
-    cursor.execute(
-        'DELETE FROM `tblUsers` WHERE `id` = %s',
-        (user_id,))
-    print("Deleted from tblUsers: {}".format(cursor.rowcount))
-
-    connection.commit()
+def delete(cursor, statement, parameters, main_table):
+    cursor.execute(statement, parameters)
+    LOGGER.info("    Deleting from '%s': %s", main_table, cursor.rowcount)
 
 
-def main(argv):
-    for user_id in argv:
-        delete_user(user_id)
+def get_user_by_id(connection, user_ids):
+    cursor = connection.cursor()
+    data = []
+    for id in user_ids:
+        id = long(id)
+        cursor.execute("SELECT username FROM tblUsers WHERE id = %s", (id,))
+        result = cursor.fetchone()
+        if not result:
+            LOGGER.warn("User with id '%s' does not exist.", id)
+            continue
+        data.append({'id': id, 'name': result[0]})
+    cursor.close()
+    return data
+
+
+def get_user_by_name(connection, user_names):
+    cursor = connection.cursor()
+    data = []
+    for name in user_names:
+        cursor.execute("SELECT id FROM tblUsers WHERE username = %s",
+                       (name,))
+        result = cursor.fetchone()
+        if not result:
+            LOGGER.warn("User with name '%s' does not exist.", name)
+            continue
+        data.append({'id': result[0], 'name': name})
+    cursor.close()
+    return data
+
+
+def confirm_delete(id, name):
+    while True:
+        prompt = "Commit delete of user '{}' ({}) [y|n|q]?  ".format(name, id)
+        response = raw_input(prompt).lower()
+        if response == 'y':
+            return True
+        elif response == 'n':
+            return False
+        elif response == 'q':
+            LOGGER.warn("Execution termintated by user.")
+            sys.exit(0)
+        else:
+            LOGGER.debug("'%s' is an invalid response.", response)
+
+
+def get_logger():
+    name = os.path.basename(__file__)
+    logger = logging.getLogger(name)
+    logger.setLevel(LOG_LEVEL)
+
+    handler_stdout = logging.StreamHandler(sys.stdout)
+    handler_stdout.setFormatter(ColoredFormatter(
+        "%(log_color)s%(levelname)-8s %(message)s%(reset)s"))
+    handler_stdout.setLevel(LOG_LEVEL)
+    logger.addHandler(handler_stdout)
+
+    handler_file = logging.FileHandler(log_name(name))
+    handler_file.setFormatter(logging.Formatter(
+        "%(asctime)s - %(process)d - %(name)s - %(levelname)s - %(message)s"))
+    handler_file.setLevel(LOG_LEVEL)
+    logger.addHandler(handler_file)
+
+    return logger
+
+
+def log_name(file_name):
+    return re.sub('\..*', '.log', file_name)
+
+
+def read_configuration():
+    LOGGER.debug("Reading configuration: %s[%s]", CONFIG_FILE, CONFIG_SECTION)
+    config = ConfigParser.ConfigParser()
+    config.read(CONFIG_FILE)
+    global USER, PASSWORD, HOST, DATABASE
+    USER = config.get(CONFIG_SECTION, 'db_user')
+    PASSWORD = config.get(CONFIG_SECTION, 'db_password')
+    HOST = config.get(CONFIG_SECTION, 'db_host')
+    DATABASE = config.get(CONFIG_SECTION, 'db_database')
+    LOGGER.info("Configuration: %s", {
+        'db_user': USER,
+        'db_password': 'XXXXXX',
+        'db_host': HOST,
+        'db_database': DATABASE})
+
+
+def process_args():
+    parser = argparse.ArgumentParser(
+        description='Delete user directly from database (MySQL)')
+    parser.add_argument(
+        '--dryrun',
+        action='store_const',
+        dest='is_dryrun',
+        default=False,
+        const=True,
+        help='Use if you do not want changes committed to the database.')
+    parser.add_argument(
+        '--usernames',
+        action='store_const',
+        dest='is_userids',
+        default=True,
+        const=False,
+        help='Set if KEY(s) are usernames, otherwise user_ids are expected.')
+    parser.add_argument(
+        'user_keys',
+        metavar='KEY',
+        nargs='+',
+        help='Either the user names, or ID, but never both.')
+    # TODO - Add 'dryrun' switch
+    return parser.parse_args()
+
 
 if __name__ == "__main__":
-    main(sys.argv[1:])
+    main()
