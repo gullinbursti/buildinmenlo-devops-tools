@@ -16,7 +16,6 @@ DATABASE = None
 LOGGER = None
 
 LOG_LEVEL = logging.DEBUG
-LOG_FILE = '/tmp/club-creator.log'
 CONFIG_SECTION = 'selfieclub-admin'
 CONFIG_FILE = os.path.join(
     os.environ['HOME'], '.builtinmenlo', 'devops-tools.cnf')
@@ -24,9 +23,10 @@ CONFIG_FILE = os.path.join(
 
 def main():
     global LOGGER
-    LOGGER = get_logger()
-    read_configuration()
     args = process_args()
+    LOGGER = get_logger(args.log_file)
+    LOGGER.info("Logging to file: %s", os.path.abspath(args.log_file))
+    read_configuration()
     process(args.is_userids, args.user_keys, args.is_dryrun)
 
 
@@ -120,8 +120,7 @@ def delete_user(connection, user_id, username, is_dryrun):
         (user_id,),
         'tblUsers')
     if not is_dryrun:
-        # connection.commit()
-        pass
+        connection.commit()
     else:
         connection.rollback()
         LOGGER.warn("In *dryrun* mode.  Not deleting user: '%s' (%s)",
@@ -141,7 +140,7 @@ def get_user_by_id(connection, user_ids):
         cursor.execute("SELECT username FROM tblUsers WHERE id = %s", (id,))
         result = cursor.fetchone()
         if not result:
-            LOGGER.warn("User with id '%s' does not exist.", id)
+            LOGGER.error("User with id '%s' does not exist.", id)
             continue
         data.append({'id': id, 'name': result[0]})
     cursor.close()
@@ -156,29 +155,14 @@ def get_user_by_name(connection, user_names):
                        (name,))
         result = cursor.fetchone()
         if not result:
-            LOGGER.warn("User with name '%s' does not exist.", name)
+            LOGGER.error("User with name '%s' does not exist.", name)
             continue
         data.append({'id': result[0], 'name': name})
     cursor.close()
     return data
 
 
-def confirm_delete(id, name):
-    while True:
-        prompt = "Commit delete of user '{}' ({}) [y|n|q]?  ".format(name, id)
-        response = raw_input(prompt).lower()
-        if response == 'y':
-            return True
-        elif response == 'n':
-            return False
-        elif response == 'q':
-            LOGGER.warn("Execution termintated by user.")
-            sys.exit(0)
-        else:
-            LOGGER.debug("'%s' is an invalid response.", response)
-
-
-def get_logger():
+def get_logger(log_file):
     name = os.path.basename(__file__)
     logger = logging.getLogger(name)
     logger.setLevel(LOG_LEVEL)
@@ -189,7 +173,7 @@ def get_logger():
     handler_stdout.setLevel(LOG_LEVEL)
     logger.addHandler(handler_stdout)
 
-    handler_file = logging.FileHandler(log_name(name))
+    handler_file = logging.FileHandler(log_file)
     handler_file.setFormatter(logging.Formatter(
         "%(asctime)s - %(process)d - %(name)s - %(levelname)s - %(message)s"))
     handler_file.setLevel(LOG_LEVEL)
@@ -198,7 +182,8 @@ def get_logger():
     return logger
 
 
-def log_name(file_name):
+def default_log():
+    file_name = os.path.basename(__file__)
     return re.sub('\..*', '.log', file_name)
 
 
@@ -221,6 +206,12 @@ def read_configuration():
 def process_args():
     parser = argparse.ArgumentParser(
         description='Delete user directly from database (MySQL)')
+    parser.add_argument(
+        '--log',
+        nargs='?',
+        dest='log_file',
+        default=default_log(),
+        help='Use if you do not want changes committed to the database.')
     parser.add_argument(
         '--dryrun',
         action='store_const',
