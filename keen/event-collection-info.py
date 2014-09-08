@@ -85,6 +85,7 @@ def digest_properties(properties):
             continue
         data_type = properties[key]
         result.append('{}[{}]'.format(key, data_type))
+    result.sort()
     return result
 
 
