@@ -18,6 +18,7 @@ KEEN_MASTER_KEY = None
 KEEN_BASE_URL = None
 LOGGER = None
 
+KEEN_TIME_FRAME = 'previous_45_days'
 OUTPUT_CSV_FILE = 'keen-event-collection-info.csv'
 LOG_LEVEL = logging.DEBUG
 CONFIG_SECTION = 'keen'
@@ -62,13 +63,17 @@ def next_collection():
 
 def get_collection_data(keen_client, collection):
     name = collection['name']
-    count = keen_client.count(event_collection=name)
+    count = keen_client.count(
+        event_collection=name,
+        timeframe=KEEN_TIME_FRAME)
     oldest = keen_client.minimum(
         event_collection=name,
-        target_property='keen.timestamp')
+        target_property='keen.timestamp',
+        timeframe=KEEN_TIME_FRAME)
     newest = keen_client.maximum(
         event_collection=name,
-        target_property='keen.timestamp')
+        target_property='keen.timestamp',
+        timeframe=KEEN_TIME_FRAME)
     properties = digest_properties(collection['properties'])
     return {
         'name': name,

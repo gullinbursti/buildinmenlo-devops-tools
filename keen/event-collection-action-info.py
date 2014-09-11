@@ -18,6 +18,7 @@ KEEN_MASTER_KEY = None
 KEEN_BASE_URL = None
 LOGGER = None
 
+KEEN_TIME_FRAME = 'previous_45_days'
 OUTPUT_CSV_FILE = 'keen-event-collection-action-info.csv'
 LOG_LEVEL = logging.DEBUG
 CONFIG_SECTION = 'keen'
@@ -70,14 +71,19 @@ def get_event_action_data(keen_client, collection, action):
         'property_name': 'action',
         'operator': 'eq',
         'property_value': action}]
-    count = keen_client.count(event_collection=name, filters=filters)
+    count = keen_client.count(
+        event_collection=name,
+        timeframe=KEEN_TIME_FRAME,
+        filters=filters)
     oldest = keen_client.minimum(
         event_collection=name,
         target_property='keen.timestamp',
+        timeframe=KEEN_TIME_FRAME,
         filters=filters)
     newest = keen_client.maximum(
         event_collection=name,
         target_property='keen.timestamp',
+        timeframe=KEEN_TIME_FRAME,
         filters=filters)
     return {
         'event_name': name,
