@@ -5,6 +5,7 @@ import ConfigParser
 import MySQLdb
 import argparse
 import csv
+import datetime
 import logging
 import os
 import sys
@@ -17,7 +18,7 @@ LOGGER = None
 
 QUERY_INTERVAL = 45
 LOG_LEVEL = logging.DEBUG
-OUTPUT_CSV_FILE = 'test.csv'
+OUTPUT_CSV_FILE_PREFIX = 'db-45-day-report'
 CONFIG_SECTION = 'selfieclub-readonly'
 CONFIG_FILE = os.path.join(
     os.environ['HOME'], '.builtinmenlo', 'devops-tools.cnf')
@@ -82,8 +83,10 @@ def process():
 
     # ----
     # write to CSV
-    LOGGER.info('Writing CSV to: %s', os.path.abspath(OUTPUT_CSV_FILE))
-    with open(OUTPUT_CSV_FILE, 'wb') as csvfile:
+    now = datetime.datetime.utcnow().isoformat()
+    file_name = '{}+{}.csv'.format(OUTPUT_CSV_FILE_PREFIX, now)
+    LOGGER.info('Writing CSV to: %s', os.path.abspath(file_name))
+    with open(file_name, 'wb') as csvfile:
         csvwriter = csv.writer(csvfile)
         csvwriter.writerow(['Metric', 'Value'])
         csvwriter.writerow(
@@ -113,9 +116,9 @@ def process():
         csvwriter.writerow(
             ['# of total clubs [count]',
              clubs_created])
-        # csvwriter.writerow(
-        #     ['# of clubs created minus user club [count]',
-        #     TODO])
+        csvwriter.writerow(
+            ['# of clubs created minus user club [count]',
+             'TODO'])
         csvwriter.writerow(
             ['# of club invites (member or non member) [count]',
              club_invites])
