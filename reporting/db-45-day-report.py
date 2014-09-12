@@ -1,12 +1,13 @@
 #! /usr/bin/env python
 
+from colorlog import ColoredFormatter
 import ConfigParser
 import MySQLdb
 import argparse
+import csv
 import logging
 import os
 import sys
-from colorlog import ColoredFormatter
 
 USER = None
 PASSWORD = None
@@ -16,6 +17,7 @@ LOGGER = None
 
 QUERY_INTERVAL = 45
 LOG_LEVEL = logging.DEBUG
+OUTPUT_CSV_FILE = 'test.csv'
 CONFIG_SECTION = 'selfieclub-readonly'
 CONFIG_FILE = os.path.join(
     os.environ['HOME'], '.builtinmenlo', 'devops-tools.cnf')
@@ -52,6 +54,9 @@ def process():
         user=USER,
         passwd=PASSWORD)
     cursor = connection.cursor()
+
+    # ----
+    # Collect data
     installs = total_installs(cursor)
     status_updates = total_status_updates(cursor)
     with_name = total_registered_with_name(cursor)
@@ -69,11 +74,63 @@ def process():
     emotions_per_status = float(emotions) / float(status_updates)
     LOGGER.info('Emotions per status update [avg]: %s', emotions_per_status)
     # AVG. # OF CLUB INVITES PER USER AVG
-    clubs_per_user = float(club_invites) / float(installs)
-    LOGGER.info('Club invites per new user [avg]: %s', clubs_per_user)
+    clubs_invites_per_user = float(club_invites) / float(installs)
+    LOGGER.info('Club invites per new user [avg]: %s', clubs_invites_per_user)
     # AVG. # OF CLUB JOINS PER USER   AVG
     club_joins_per_user = float(clubs_joined) / float(installs)
     LOGGER.info('Club joins per new user [avg]: %s', club_joins_per_user)
+
+    # ----
+    # write to CSV
+    LOGGER.info('Writing CSV to: %s', os.path.abspath(OUTPUT_CSV_FILE))
+    with open(OUTPUT_CSV_FILE, 'wb') as csvfile:
+        csvwriter = csv.writer(csvfile)
+        csvwriter.writerow(['Metric', 'Value'])
+        csvwriter.writerow(
+            ['# of total installs [count]',
+             installs])
+        csvwriter.writerow(
+            ['# of total reg users with username [count]',
+             with_name])
+        csvwriter.writerow(
+            ['# of total users with sucessful pin [count]',
+             verified])
+        csvwriter.writerow(
+            ['# of total users with failed pin [count]',
+             pin_failed])
+        csvwriter.writerow(
+            ['# of users that never used pin [count]',
+             no_pin_attempt])
+        csvwriter.writerow(
+            ['# of total status updates [count]',
+             status_updates])
+        csvwriter.writerow(
+            ['avg. status update per user [avg]',
+             updates_per_user])
+        csvwriter.writerow(
+            ['avg. emotions per status update [avg]',
+             emotions_per_status])
+        csvwriter.writerow(
+            ['# of total clubs [count]',
+             clubs_created])
+        # csvwriter.writerow(
+        #     ['# of clubs created minus user club [count]',
+        #     TODO])
+        csvwriter.writerow(
+            ['# of club invites (member or non member) [count]',
+             club_invites])
+        csvwriter.writerow(
+            ['avg. # of club invites per user [avg]',
+             clubs_invites_per_user])
+        csvwriter.writerow(
+            ['# of club joins [count]',
+             clubs_joined])
+        csvwriter.writerow(
+            ['avg. # of club joins per user [avg]',
+             club_joins_per_user])
+        csvwriter.writerow(
+            ['# emotions [count]',
+             emotions])
 
 
 # TODO
