@@ -4,6 +4,7 @@ from colorlog import ColoredFormatter
 from keen.client import KeenClient
 import ConfigParser
 import csv
+import datetime
 import json
 import logging
 import os
@@ -19,7 +20,7 @@ KEEN_BASE_URL = None
 LOGGER = None
 
 KEEN_TIME_FRAME = 'previous_45_days'
-OUTPUT_CSV_FILE = 'keen-event-collection-info.csv'
+OUTPUT_CSV_FILE_PREFIX = 'keen-event-collection-info'
 LOG_LEVEL = logging.DEBUG
 CONFIG_SECTION = 'keen'
 CONFIG_FILE = os.path.join(
@@ -31,8 +32,10 @@ def main():
     LOGGER = get_logger()
     read_configuration()
 
-    LOGGER.info('Writing CSV to: %s', os.path.abspath(OUTPUT_CSV_FILE))
-    with open(OUTPUT_CSV_FILE, 'wb') as csvfile:
+    now = datetime.datetime.utcnow().isoformat()
+    file_name = '{}+{}.csv'.format(OUTPUT_CSV_FILE_PREFIX, now)
+    LOGGER.info('Writing CSV to: %s', os.path.abspath(file_name))
+    with open(file_name, 'wb') as csvfile:
         csvwriter = csv.writer(csvfile)
         csvwriter.writerow([
             'Event collection name',
