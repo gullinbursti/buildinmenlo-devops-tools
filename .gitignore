@@ -43,11 +43,14 @@ Thumbs.db
 
 # Python #
 ##########
-__pycache__/
-*.py[cod]
-*.egg-info/
 *.egg
+*.egg-info/
+*.py[cod]
+/MANIFEST
 /build/
+/dist/
+__pycache__/
+/.virtualenv/
 
 # Editor temp files #
 #####################
@@ -55,7 +58,6 @@ __pycache__/
 .swp
 .*.swp
 
-# Other #
-#########
-/.virtualenv/
+# Django #
+##########
 /static/
