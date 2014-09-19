@@ -3,11 +3,11 @@
 from colorlog import ColoredFormatter
 from datetime import datetime, timedelta
 from dateutil import rrule
+from dateutil.relativedelta import relativedelta
 import ConfigParser
 import MySQLdb
 import argparse
 import calendar
-import csv
 import logging
 import os
 import sys
@@ -41,63 +41,75 @@ def process():
         passwd=PASSWORD)
     cursor = connection.cursor()
     now = datetime.utcnow()
-    process_daily_last_365_days(cursor, now)
-    process_weekly_last_12_months(cursor, now)
-    process_monthly_last_12_months(cursor, now)
+    process_yesterday(cursor, now)
+    process_24_hours(cursor, now)
+    process_last_week(cursor, now)
+    process_7_days(cursor, now)
+    process_last_month(cursor, now)
+    process_last_30_days(cursor, now)
 
 
-def process_daily_last_365_days(cursor, now):
-    start = now - timedelta(days=365)
-    file_name = '{}+{}+daily.csv'.format(OUTPUT_CSV_FILE_PREFIX,
-                                         now.isoformat())
-    LOGGER.info('Processing daily active users for the last 365 months.  '
-                'Writing to CSV file: %s', os.path.abspath(file_name))
-    with open(file_name, 'wb') as csvfile:
-        csvwriter = csv.writer(csvfile)
-        csvwriter.writerow(['Day', 'Day\'s active users'])
-        for current_date in rrule.rrule(rrule.DAILY, dtstart=start, until=now):
-            start_string = current_date.strftime('%Y-%m-%d 00:00:00')
-            end_string = current_date.strftime('%Y-%m-%d 23:59:59')
-            count = get_count(cursor, start_string, end_string)
-            csvwriter.writerow([current_date.strftime('%Y-%m-%d'), count])
+def process_yesterday(cursor, now):
+    yesterday = now - timedelta(days=1)
+    start_string = yesterday.strftime('%Y-%m-%d 00:00:00')
+    end_string = yesterday.strftime('%Y-%m-%d 23:59:59')
+    count = get_count(cursor, start_string, end_string)
+    LOGGER.info('Yesterday\'s active users (%s through %s): %s',
+                start_string, end_string, count)
+    return count
 
 
-def process_monthly_last_12_months(cursor, now):
-    start = now - timedelta(days=365)
-    file_name = '{}+{}+monthly.csv'.format(OUTPUT_CSV_FILE_PREFIX,
-                                           now.isoformat())
-    LOGGER.info('Processing monthly active users for the last 12 months.  '
-                'Writing to CSV file: %s', os.path.abspath(file_name))
-    with open(file_name, 'wb') as csvfile:
-        csvwriter = csv.writer(csvfile)
-        csvwriter.writerow(['Month\'s start', 'Month\'s active users'])
-        for current_date in rrule.rrule(rrule.MONTHLY, dtstart=start,
-                                        until=now):
-            start_string = current_date.strftime('%Y-%m-01 00:00:00')
-            last_day = calendar.monthrange(current_date.year,
-                                           current_date.month)[1]
-            end_string = datetime(current_date.year, current_date.month,
-                                  last_day).strftime('%Y-%m-%d 23:59:59')
-            count = get_count(cursor, start_string, end_string)
-            csvwriter.writerow([current_date.strftime('%Y-%m-01'), count])
+def process_24_hours(cursor, now):
+    start = now - timedelta(hours=24)
+    start_string = start.strftime('%Y-%m-%d %H:%M:%S')
+    end_string = now.strftime('%Y-%m-%d %H:%M:%S')
+    count = get_count(cursor, start_string, end_string)
+    LOGGER.info('Active users in the last 24 hours (%s through %s): %s',
+                start_string, end_string, count)
+    return count
 
 
-def process_weekly_last_12_months(cursor, now):
-    start = now - timedelta(days=365)
-    file_name = '{}+{}+weekly.csv'.format(OUTPUT_CSV_FILE_PREFIX,
-                                          now.isoformat())
-    LOGGER.info('Processing weekly active users for the last 12 months.  '
-                'Writing to CSV file: %s', os.path.abspath(file_name))
-    with open(file_name, 'wb') as csvfile:
-        csvwriter = csv.writer(csvfile)
-        csvwriter.writerow(['Week\'s start', 'Week\'s active users'])
-        for current_date in rrule.rrule(rrule.WEEKLY, byweekday=rrule.SU,
-                                        dtstart=start, until=now):
-            start_string = current_date.strftime('%Y-%m-%d 00:00:00')
-            end = current_date + timedelta(days=6)
-            end_string = end.strftime('%Y-%m-%d 23:59:59')
-            count = get_count(cursor, start_string, end_string)
-            csvwriter.writerow([current_date.strftime('%Y-%m-%d'), count])
+def process_last_week(cursor, now):
+    current_date = now + relativedelta(weekday=rrule.SU(-2))
+    start_string = current_date.strftime('%Y-%m-%d 00:00:00')
+    end = current_date + timedelta(days=6)
+    end_string = end.strftime('%Y-%m-%d 23:59:59')
+    count = get_count(cursor, start_string, end_string)
+    LOGGER.info('Active users last week (%s through %s): %s',
+                start_string, end_string, count)
+    return count
+
+
+def process_7_days(cursor, now):
+    current_date = now - timedelta(days=7)
+    start_string = current_date.strftime('%Y-%m-%d %H:%M:%S')
+    end_string = now.strftime('%Y-%m-%d %H:%M:%S')
+    count = get_count(cursor, start_string, end_string)
+    LOGGER.info('Active users last 7 days (%s through %s): %s',
+                start_string, end_string, count)
+    return count
+
+
+def process_last_month(cursor, now):
+    current_date = now + relativedelta(months=-1)
+    start_string = current_date.strftime('%Y-%m-01 00:00:00')
+    last_day = calendar.monthrange(current_date.year, current_date.month)[1]
+    end_string = datetime(current_date.year, current_date.month, last_day) \
+        .strftime('%Y-%m-%d 23:59:59')
+    count = get_count(cursor, start_string, end_string)
+    LOGGER.info('Active users last month (%s through %s): %s',
+                start_string, end_string, count)
+    return count
+
+
+def process_last_30_days(cursor, now):
+    current_date = now - timedelta(days=30)
+    start_string = current_date.strftime('%Y-%m-%d %H:%M:%S')
+    end_string = now.strftime('%Y-%m-%d %H:%M:%S')
+    count = get_count(cursor, start_string, end_string)
+    LOGGER.info('Active users last 30 days (%s through %s): %s',
+                start_string, end_string, count)
+    return count
 
 
 def get_count(cursor, start, end):
