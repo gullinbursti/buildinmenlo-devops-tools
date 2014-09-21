@@ -41,5 +41,5 @@ curl -XPUT 'localhost:9200/_settings' -d '{
 # now zip up final product
 echo "\nzipping $TO $TO.tar.gz "
 cd $TO_FOLDER
-/bin/tar zcf $DATE.tar.gz $DATE
-/bin/rm -rf $DATE
+tar zcf $DATE.tar.gz $DATE
+rm -rf $DATE
