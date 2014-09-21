@@ -1,6 +1,12 @@
+#! /bin/bash
+
+set -o errexit
+set -o nounset
+set -o errtrace
+
 # SCRIPTS=/home/volley/admin/bin/elasticsearch
 TO_FOLDER=.
-FROM=/elasticsearch/data
+FROM=/var/lib/elasticsearch
 
 DATE=`date +%Y-%m-%d_%H`
 TO=$TO_FOLDER/$DATE
