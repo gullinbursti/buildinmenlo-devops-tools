@@ -63,6 +63,15 @@ def delete_user(connection, user_id, username, is_dryrun):
         (user_id,), 'tblChallengeVotes')
     delete(
         cursor,
+        """
+        DELETE FROM tbl_status_update_emotion
+            WHERE status_update_id IN (
+                SELECT id FROM tblChallenges WHERE creator_id = %s)
+        """,
+        (user_id,),
+        'tbl_status_update_emotion')
+    delete(
+        cursor,
         'DELETE FROM tblFlaggedUserApprovals WHERE user_id = %s',
         (user_id,),
         'tblFlaggedUserApprovals.user_id')
@@ -114,6 +123,11 @@ def delete_user(connection, user_id, username, is_dryrun):
         'DELETE FROM club WHERE owner_id = %s',
         (user_id,),
         'club')
+    delete(
+        cursor,
+        'DELETE FROM moji_invite WHERE member_id = %s',
+        (user_id,),
+        'moji_invite')
     delete(
         cursor,
         'DELETE FROM tblUsers WHERE id = %s',
