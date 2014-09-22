@@ -4,12 +4,8 @@ boto==2.32.1
 certifi==14.05.14
 colorlog==2.4.0
 keen==0.3.0
-pep8==1.5.7
 pycrypto==2.6.1
-pyflakes==0.8.1
 python-dateutil==2.2
 requests==2.4.0
-rope==0.10.2
 six==1.8.0
 wsgiref==0.1.2
--e .
