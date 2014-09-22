@@ -19,8 +19,6 @@ DATABASE = None
 LOGGER = None
 
 LOG_LEVEL = logging.DEBUG
-OUTPUT_CSV_FILE_SUMMARY_PREFIX = 'active-user-report-summary'
-OUTPUT_CSV_FILE_PREFIX = 'active-user-report'
 CONFIG_SECTION = 'selfieclub-readonly'
 CONFIG_FILE = os.path.join(
     os.environ['HOME'], '.builtinmenlo', 'devops-tools.cnf')
