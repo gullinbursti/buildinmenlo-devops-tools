@@ -17,8 +17,12 @@ LOGGER = None
 
 LOG_LEVEL = logging.DEBUG
 CONFIG_SECTION = 'selfieclub-admin'
-CONFIG_FILE = os.path.join(
-    os.environ['HOME'], '.builtinmenlo', 'devops-tools.cnf')
+
+CONFIG_FILE_GLOBAL_BASE = os.path.join(
+    '/etc', 'builtinmenlo', 'devops-tools')
+CONFIG_FILE_USER_BASE = os.path.join(
+    os.environ['HOME'], '.builtinmenlo', 'devops-tools')
+CONFIG_FILE_EXTENTION = 'cnf'
 
 
 def main():
@@ -26,7 +30,7 @@ def main():
     args = process_args()
     LOGGER = get_logger(args.log_file)
     LOGGER.info("Logging to file: %s", os.path.abspath(args.log_file))
-    read_configuration()
+    load_configuration(get_configuration_files(args.environment))
     process(args.is_userids, args.user_keys, args.is_dryrun)
 
 
@@ -56,7 +60,8 @@ def delete_user(connection, user_id, username, is_dryrun):
     delete(
         cursor,
         'DELETE FROM tblChallengeParticipants WHERE user_id = %s',
-        (user_id,), 'tblChallengeParticipants')
+        (user_id,),
+        'tblChallengeParticipants')
     delete(
         cursor,
         'DELETE FROM tblChallengeVotes WHERE user_id = %s',
@@ -201,10 +206,25 @@ def default_log():
     return re.sub('\..*', '.log', file_name)
 
 
-def read_configuration():
-    LOGGER.debug("Reading configuration: %s[%s]", CONFIG_FILE, CONFIG_SECTION)
+def load_configuration(configuration_files):
+    LOGGER.debug(
+        'Attempting to read configuration section [%s] from the following '
+        'file(s), in order: %s',
+        CONFIG_SECTION,
+        configuration_files)
     config = ConfigParser.ConfigParser()
-    config.read(CONFIG_FILE)
+    read_files = config.read(configuration_files)
+    if read_files:
+        LOGGER.info(
+            'Loaded the [%s] section from the following file(s): %s',
+            CONFIG_SECTION,
+            read_files)
+    else:
+        LOGGER.error(
+            'Failed to find any of the following configuration '
+            'files: %s',
+            configuration_files)
+        sys.exit(1)
     global USER, PASSWORD, HOST, DATABASE
     USER = config.get(CONFIG_SECTION, 'db_user')
     PASSWORD = config.get(CONFIG_SECTION, 'db_password')
@@ -217,9 +237,15 @@ def read_configuration():
         'db_database': DATABASE})
 
 
+def get_configuration_files(environment):
+    return ['.'.join([file, CONFIG_FILE_EXTENTION]) for file in (
+        '-'.join([CONFIG_FILE_GLOBAL_BASE, environment]),
+        '-'.join([CONFIG_FILE_USER_BASE, environment]))]
+
+
 def process_args():
     parser = argparse.ArgumentParser(
-        description='Delete user directly from database (MySQL)')
+        description='Delete user directly from database (MySQL).')
     parser.add_argument(
         '--log',
         nargs='?',
@@ -240,6 +266,26 @@ def process_args():
         default=True,
         const=False,
         help='Set if KEY(s) are usernames, otherwise user_ids are expected.')
+    environment_group = parser.add_mutually_exclusive_group(
+        required=True)
+    environment_group.add_argument(
+        '--devint',
+        action='store_const',
+        dest='environment',
+        const='devint',
+        help='Perform on production environment.')
+    environment_group.add_argument(
+        '--prod',
+        action='store_const',
+        dest='environment',
+        const='prod',
+        help='Perform on dev integration environment.')
+    environment_group.add_argument(
+        '--local_dev',
+        action='store_const',
+        dest='environment',
+        const='local_dev',
+        help='Perform on a developer\'s local environment.')
     parser.add_argument(
         'user_keys',
         metavar='KEY',
