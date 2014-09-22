@@ -291,7 +291,6 @@ def process_args():
         metavar='KEY',
         nargs='+',
         help='Either the user names, or ID, but never both.')
-    # TODO - Add 'dryrun' switch
     return parser.parse_args()
 
 
