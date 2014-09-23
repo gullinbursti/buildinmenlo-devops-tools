@@ -3,6 +3,7 @@ Padding==0.4
 boto==2.32.1
 certifi==14.05.14
 colorlog==2.4.0
+elasticsearch<1.0.0
 keen==0.3.0
 pycrypto==2.6.1
 python-dateutil==2.2

@@ -1,19 +1,22 @@
 #! /usr/bin/env python
 
+from colorlog import ColoredFormatter
+from elasticsearch import Elasticsearch
 import ConfigParser
 import MySQLdb
 import argparse
 import logging
 import os
-import sys
-from colorlog import ColoredFormatter
 import re
+import sys
 
 USER = None
 PASSWORD = None
 HOST = None
 DATABASE = None
 LOGGER = None
+ELASTICSEARCH_HOST = None
+ELASTICSEARCH_PORT = None
 
 LOG_LEVEL = logging.DEBUG
 CONFIG_SECTION = 'selfieclub-admin'
@@ -51,12 +54,55 @@ def process(is_userids, keys, is_dryrun):
 
 def delete_all(connection, users, is_dryrun):
     for user in users:
-        delete_user(connection, user['id'], user['name'], is_dryrun)
+        # The database is authoritative
+        #
+        # Safer to delete from Elasticsearch first.  This allows for multiple
+        # attempts if the ES delete fails.  Once a user is goine from the
+        # database, things get more difficult.
+        LOGGER.info('===> Elasticsearch <===')
+        delete_from_elasticsearch(user['id'], user['name'], is_dryrun)
+        LOGGER.info('===> Database <===')
+        delete_from_db(connection, user['id'], user['name'], is_dryrun)
 
 
-def delete_user(connection, user_id, username, is_dryrun):
+def delete_from_elasticsearch(user_id, username, is_dryrun):
+    indexes = ['contact_lists', 'social']
+    query = {
+        'query': {
+            'term': {'id': user_id}
+        },
+        'fields': ['_id', '_index', '_type']
+    }
+    elastic = Elasticsearch([
+        {'host': ELASTICSEARCH_HOST,
+         'port': ELASTICSEARCH_PORT}])
+    query_response = elastic.search(index=indexes, body=query)
+    records = query_response['hits']['hits']
+    LOGGER.info(
+        'Deleteing the following records from Elasticsearch pertaining to '
+        'user \'%s\' (%s): %s', username, user_id, records)
+    for record in records:
+        delete_response = {}
+        if not is_dryrun:
+            delete_response = elastic.delete(
+                index=record['_index'],
+                doc_type=record['_type'],
+                id=record['_id'])
+        else:
+            delete_response['ok'] = '*dryrun*'
+        LOGGER.info('    Deleted from Elasticsearch /%s/%s/%s: %s',
+                    record['_index'], record['_type'], record['_id'],
+                    delete_response['ok'])
+    if is_dryrun:
+        LOGGER.warn(
+            'In *dryrun* mode.  Not deleting user from Elasticsearch: %s (%s)',
+            username, user_id)
+
+
+def delete_from_db(connection, user_id, username, is_dryrun):
     cursor = connection.cursor()
-    LOGGER.info("Preparing to delete '%s' (%s):", username, user_id)
+    LOGGER.info("Preparing to delete '%s' (%s) from the database:", username,
+                user_id)
     delete(
         cursor,
         'DELETE FROM tblChallengeParticipants WHERE user_id = %s',
@@ -140,15 +186,20 @@ def delete_user(connection, user_id, username, is_dryrun):
         'tblUsers')
     if not is_dryrun:
         connection.commit()
+        LOGGER.info(
+            'Database changes committed for \'%s\' (%s)',
+            username, user_id)
     else:
         connection.rollback()
-        LOGGER.warn("In *dryrun* mode.  Not deleting user: '%s' (%s)",
-                    username, user_id)
+        LOGGER.warn(
+            'In *dryrun* mode.  Not deleting user from database: %s (%s)',
+            username, user_id)
 
 
 def delete(cursor, statement, parameters, main_table):
     cursor.execute(statement, parameters)
-    LOGGER.info("    Deleting from '%s': %s", main_table, cursor.rowcount)
+    LOGGER.info("    Deleting from database table '%s': %s", main_table,
+                cursor.rowcount)
 
 
 def get_user_by_id(connection, user_ids):
@@ -225,16 +276,22 @@ def load_configuration(configuration_files):
             'files: %s',
             configuration_files)
         sys.exit(1)
-    global USER, PASSWORD, HOST, DATABASE
+    global USER, PASSWORD, HOST, DATABASE, ELASTICSEARCH_HOST, \
+        ELASTICSEARCH_PORT
     USER = config.get(CONFIG_SECTION, 'db_user')
     PASSWORD = config.get(CONFIG_SECTION, 'db_password')
     HOST = config.get(CONFIG_SECTION, 'db_host')
     DATABASE = config.get(CONFIG_SECTION, 'db_database')
+    ELASTICSEARCH_HOST = config.get(CONFIG_SECTION, 'elasticsearch_host')
+    ELASTICSEARCH_PORT = config.get(CONFIG_SECTION, 'elasticsearch_port')
+
     LOGGER.info("Configuration: %s", {
         'db_user': USER,
         'db_password': 'XXXXXX',
         'db_host': HOST,
-        'db_database': DATABASE})
+        'db_database': DATABASE,
+        'elasticsearch_host': ELASTICSEARCH_HOST,
+        'elasticsearch_port': ELASTICSEARCH_PORT})
 
 
 def get_configuration_files(environment):
