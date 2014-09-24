@@ -1,5 +1,8 @@
 #! /usr/bin/env python
 
+
+# pylint: disable=invalid-name
+
 from colorlog import ColoredFormatter
 from elasticsearch import Elasticsearch
 import ConfigParser
