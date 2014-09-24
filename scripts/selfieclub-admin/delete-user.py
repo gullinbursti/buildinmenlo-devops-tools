@@ -1,8 +1,7 @@
 #! /usr/bin/env python
-# pylint: disable=invalid-name, global-statement, fixme
+# pylint: disable=invalid-name, global-statement
 # TODO - Eliminate:
 #    - global-statement
-#    - fixme
 # (This block has to be after 'pylint: disable' else 'TODO' gets flagged.)
 
 from colorlog import ColoredFormatter
