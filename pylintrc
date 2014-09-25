@@ -44,7 +44,12 @@ symbols=no
 # --enable=similarities". If you want to run only the classes checker, but have
 # no Warning level messages displayed, use"--disable=all --enable=classes
 # --disable=W"
-disable=missing-docstring, fixme
+
+
+#    - missing-docstring - not documenting at the moment, to change.
+#    - fixme - TODO and FIXME sections encouraged to an extent
+#    - line-too-long - monitored by flake8 (pep8)
+disable=missing-docstring, fixme, line-too-long
 
 
 [REPORTS]

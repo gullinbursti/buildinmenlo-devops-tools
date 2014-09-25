@@ -19,13 +19,16 @@ setup(
         'requests>=2.4.0',
         'six>=1.8.0',
         'wsgiref>=0.1.2'],
+    entry_points={'console_scripts': [
+        'delete-user = bimadmin.selfieclub.deleteuser:main',
+        'create_ec2_instance_alarms = bimadmin.aws.cloudwatch.ec2:create',
+        'create_elasticache_instance_alarms = bimadmin.aws.cloudwatch.elasticache:create',  # noqa
+        'create_elb_alarms = bimadmin.aws.cloudwatch.elb:create',
+        'create_rds_instance_alarms = bimadmin.aws.cloudwatch.rds:create',
+    ]},
     scripts=[
-        path.join('scripts', 'aws', 'create_ec2_instance_alarms.py'),
-        path.join('scripts', 'aws', 'create_elasticache_instance_alarms.py'),
-        path.join('scripts', 'aws', 'create_elb_alarms.py'),
-        path.join('scripts', 'aws', 'create_rds_instance_alarms.py'),
+        # TODO: Convert to modules and move to 'console_scripts'.
         path.join('scripts', 'reporting', 'db-45-day-report.py'),
         path.join('scripts', 'reporting',
                   'keen-event-collection-action-info.py'),
-        path.join('scripts', 'reporting', 'keen-event-collection-info.py'),
-        path.join('scripts', 'selfieclub-admin', 'delete-user.py')])
+        path.join('scripts', 'reporting', 'keen-event-collection-info.py')])

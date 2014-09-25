@@ -28,7 +28,7 @@ EC2_INSTANCE_INFO = {
 }
 
 
-def main():
+def create():
     logging.basicConfig(level=LOG_LEVEL)
     read_configuration()
     args = process_args()
@@ -166,7 +166,3 @@ def process_args():
         nargs='+',
         help='ElastiCache cluster identifiers')
     return parser.parse_args()
-
-
-if __name__ == "__main__":
-    main()

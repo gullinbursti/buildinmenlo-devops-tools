@@ -1,5 +1,5 @@
 #! /usr/bin/env python
-# pylint: disable=invalid-name, global-statement
+# pylint: disable=global-statement
 # TODO - Eliminate:
 #    - global-statement
 # (This block has to be after 'pylint: disable' else 'TODO' gets flagged.)
@@ -354,7 +354,3 @@ def process_args():
         nargs='+',
         help='Either the user names, or ID, but never both.')
     return parser.parse_args()
-
-
-if __name__ == "__main__":
-    main()

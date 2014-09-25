@@ -19,7 +19,7 @@ LOG_LEVEL = logging.INFO
 CLOUDWATCH_NAME_PREFIX = 'ec2'
 
 
-def main():
+def create():
     logging.basicConfig(level=LOG_LEVEL)
     read_configuration()
     args = process_args()
@@ -214,7 +214,3 @@ def process_args():
         nargs='+',
         help='EC2 insance identifier(s)')
     return parser.parse_args()
-
-
-if __name__ == '__main__':
-    main()
