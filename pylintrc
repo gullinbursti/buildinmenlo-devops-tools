@@ -46,10 +46,14 @@ symbols=no
 # --disable=W"
 
 
+# Reasoning for the following:
 #    - missing-docstring - not documenting at the moment, to change.
 #    - fixme - TODO and FIXME sections encouraged to an extent
 #    - line-too-long - monitored by flake8 (pep8)
-disable=missing-docstring, fixme, line-too-long
+#
+# TODO: Get rid of:
+#    - duplicate-code
+disable=missing-docstring, fixme, line-too-long, duplicate-code
 
 
 [REPORTS]

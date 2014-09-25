@@ -1,4 +1,9 @@
 #! /usr/bin/env python
+# pylint: disable=global-statement, duplicate-code
+# TODO - eliminate:
+#    - global-statement
+#    - duplicate-code
+
 
 import ConfigParser
 import argparse

@@ -1,8 +1,7 @@
 #! /usr/bin/env python
 # pylint: disable=global-statement
-# TODO - Eliminate:
+# TODO - eliminate:
 #    - global-statement
-# (This block has to be after 'pylint: disable' else 'TODO' gets flagged.)
 
 from colorlog import ColoredFormatter
 from elasticsearch import Elasticsearch

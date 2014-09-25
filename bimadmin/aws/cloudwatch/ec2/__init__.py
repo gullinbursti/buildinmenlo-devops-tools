@@ -1,4 +1,9 @@
 #! /usr/bin/env python
+# pylint: disable=global-statement, duplicate-code
+# TODO - eliminate:
+#    - global-statement
+#    - duplicate-code
+
 
 import boto.ec2.cloudwatch
 import sys
@@ -75,7 +80,7 @@ def get_instance_info(instance_id):
 
 def create_status_alarm(cloudwatch_conn, instance_info):
     name = "{}+StatusCheckFailed".format(instance_info['name_prefix'])
-    print("Processing: {}".format(name))
+    print "Processing: {}".format(name)
     alarm = boto.ec2.cloudwatch.alarm.MetricAlarm(
         connection=cloudwatch_conn,
         name=name,
@@ -97,7 +102,7 @@ def create_status_alarm(cloudwatch_conn, instance_info):
 
 def create_cpu_alarm(cloudwatch_conn, instance_info):
     name = "{}+CPUUtilization".format(instance_info['name_prefix'])
-    print("Processing: {}".format(name))
+    print "Processing: {}".format(name)
     alarm = boto.ec2.cloudwatch.alarm.MetricAlarm(
         connection=cloudwatch_conn,
         name=name,
@@ -119,7 +124,7 @@ def create_cpu_alarm(cloudwatch_conn, instance_info):
 
 def create_swap_alarm(cloudwatch_conn, instance_info):
     name = "{}+SwapUtilization".format(instance_info['name_prefix'])
-    print("Processing: {}".format(name))
+    print "Processing: {}".format(name)
     alarm = boto.ec2.cloudwatch.alarm.MetricAlarm(
         connection=cloudwatch_conn,
         name=name,
@@ -141,7 +146,7 @@ def create_swap_alarm(cloudwatch_conn, instance_info):
 
 def create_memory_alarm(cloudwatch_conn, instance_info):
     name = "{}+MemoryUtilization".format(instance_info['name_prefix'])
-    print("Processing: {}".format(name))
+    print "Processing: {}".format(name)
     alarm = boto.ec2.cloudwatch.alarm.MetricAlarm(
         connection=cloudwatch_conn,
         name=name,
@@ -163,7 +168,7 @@ def create_memory_alarm(cloudwatch_conn, instance_info):
 
 def create_disk_alarm(cloudwatch_conn, instance_info):
     name = "{}+DiskSpaceUtilization".format(instance_info['name_prefix'])
-    print("Processing: {}".format(name))
+    print "Processing: {}".format(name)
     alarm = boto.ec2.cloudwatch.alarm.MetricAlarm(
         connection=cloudwatch_conn,
         name=name,
