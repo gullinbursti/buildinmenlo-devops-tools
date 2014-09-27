@@ -11,6 +11,7 @@ setup(
         path.join('scripts', 'aws', 'create_elasticache_instance_alarms.py'),
         path.join('scripts', 'aws', 'create_elb_alarms.py'),
         path.join('scripts', 'aws', 'create_rds_instance_alarms.py'),
+        path.join('scripts', 'reporting', 'active-user-report.py'),
         path.join('scripts', 'reporting', 'db-45-day-report.py'),
         path.join('scripts', 'reporting',
                   'keen-event-collection-action-info.py'),
