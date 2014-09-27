@@ -157,7 +157,7 @@ def delete_from_db(connection, user_id, username, is_dryrun):
     delete(
         cursor,
         """
-        DELETE from club_member
+        DELETE FROM club_member
             WHERE club_id IN (
                 SELECT club.id FROM club WHERE club.owner_id = %s)
         """,
