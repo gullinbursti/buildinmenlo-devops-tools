@@ -3,7 +3,7 @@ from distutils.core import setup
 
 setup(
     name='buildinmenlo-devops-tools',
-    version='0.3.0',
+    version='0.3.1',
     author='Pedro H',
     author_email='pedro@builtinmenlo.com',
     scripts=[
