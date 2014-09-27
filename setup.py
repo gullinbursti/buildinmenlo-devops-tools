@@ -3,7 +3,7 @@ from setuptools import setup
 
 setup(
     name='buildinmenlo-devops-tools',
-    version='0.3.0',
+    version='0.3.1',
     author='Pedro H',
     author_email='pedro@builtinmenlo.com',
     install_requires=[
@@ -28,6 +28,7 @@ setup(
     ]},
     scripts=[
         # TODO: Convert to modules and move to 'console_scripts'.
+        path.join('scripts', 'reporting', 'active-user-report.py'),
         path.join('scripts', 'reporting', 'db-45-day-report.py'),
         path.join('scripts', 'reporting',
                   'keen-event-collection-action-info.py'),
