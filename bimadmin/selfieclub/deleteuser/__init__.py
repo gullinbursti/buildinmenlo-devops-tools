@@ -179,9 +179,9 @@ def delete_from_db(connection, user_id, username, is_dryrun):
         'club')
     delete(
         cursor,
-        'DELETE FROM moji_invite WHERE member_id = %s',
+        'DELETE FROM tbl_moji_invite WHERE member_id = %s',
         (user_id,),
-        'moji_invite')
+        'tbl_moji_invite')
     delete(
         cursor,
         'DELETE FROM tblUsers WHERE id = %s',
