@@ -1,4 +1,8 @@
 #! /usr/bin/env python
+# pylint: disable=global-statement, duplicate-code
+# TODO - eliminate:
+#    - global-statement
+#    - duplicate-code
 
 import ConfigParser
 import argparse
@@ -20,7 +24,7 @@ LOG_LEVEL = logging.INFO
 CLOUDWATCH_NAME_PREFIX = 'elb'
 
 
-def main():
+def create():
     logging.basicConfig(level=LOG_LEVEL)
     read_configuration()
     args = process_args()
@@ -115,7 +119,3 @@ def process_args():
         nargs='+',
         help='load balancer name(s)')
     return parser.parse_args()
-
-
-if __name__ == "__main__":
-    main()

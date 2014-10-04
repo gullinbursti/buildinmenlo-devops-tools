@@ -1,5 +1,0 @@
--r requirements.txt
-rope==0.10.2
-pep8==1.5.7
-pyflakes==0.8.1
--e .

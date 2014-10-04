@@ -1,4 +1,7 @@
 #! /usr/bin/env python
+# pylint: disable=global-statement
+# TODO - eliminate:
+#    - global-statement
 
 from colorlog import ColoredFormatter
 from elasticsearch import Elasticsearch
@@ -154,7 +157,7 @@ def delete_from_db(connection, user_id, username, is_dryrun):
     delete(
         cursor,
         """
-        DELETE from club_member
+        DELETE FROM club_member
             WHERE club_id IN (
                 SELECT club.id FROM club WHERE club.owner_id = %s)
         """,
@@ -205,14 +208,15 @@ def delete(cursor, statement, parameters, main_table):
 def get_user_by_id(connection, user_ids):
     cursor = connection.cursor()
     data = []
-    for id in user_ids:
-        id = long(id)
-        cursor.execute("SELECT username FROM tblUsers WHERE id = %s", (id,))
+    for user_id in user_ids:
+        user_id = long(user_id)
+        cursor.execute(
+            "SELECT username FROM tblUsers WHERE id = %s", (user_id,))
         result = cursor.fetchone()
         if not result:
-            LOGGER.error("User with id '%s' does not exist.", id)
+            LOGGER.error("User with id '%s' does not exist.", user_id)
             continue
-        data.append({'id': id, 'name': result[0]})
+        data.append({'id': user_id, 'name': result[0]})
     cursor.close()
     return data
 
@@ -254,7 +258,7 @@ def get_logger(log_file):
 
 def default_log():
     file_name = os.path.basename(__file__)
-    return re.sub('\..*', '.log', file_name)
+    return re.sub(r'\..*', '.log', file_name)
 
 
 def load_configuration(configuration_files):
@@ -295,7 +299,7 @@ def load_configuration(configuration_files):
 
 
 def get_configuration_files(environment):
-    return ['.'.join([file, CONFIG_FILE_EXTENTION]) for file in (
+    return ['.'.join([file_base, CONFIG_FILE_EXTENTION]) for file_base in (
         '-'.join([CONFIG_FILE_GLOBAL_BASE, environment]),
         '-'.join([CONFIG_FILE_USER_BASE, environment]))]
 
@@ -349,7 +353,3 @@ def process_args():
         nargs='+',
         help='Either the user names, or ID, but never both.')
     return parser.parse_args()
-
-
-if __name__ == "__main__":
-    main()
