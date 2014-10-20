@@ -126,6 +126,20 @@ def delete_from_db(connection, user_id, username, is_dryrun):
         'tbl_status_update_emotion')
     delete(
         cursor,
+        'DELETE FROM tbl_status_update_viewer WHERE member_id = %s',
+        (user_id,),
+        'tbl_status_update_viewer')
+    delete(
+        cursor,
+        """
+        DELETE FROM tbl_status_update_viewer
+             WHERE status_update_id IN (
+                 SELECT id FROM tblChallenges WHERE creator_id = %s)
+        """,
+        (user_id,),
+        'tbl_status_update_viewer')
+    delete(
+        cursor,
         'DELETE FROM tblFlaggedUserApprovals WHERE user_id = %s',
         (user_id,),
         'tblFlaggedUserApprovals.user_id')
