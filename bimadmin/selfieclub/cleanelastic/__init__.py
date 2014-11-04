@@ -54,10 +54,10 @@ def clean_elasticsearch(connection, is_dryrun):
     # indexes = ['contact_lists', 'social']
     indexes = ['social']
     query = {
+        'from': 0, 'size': 50,
         'query': {
             'match_all': {}
-        },
-        'fields': ['_id', '_index', '_type', 'username']
+        }
     }
     elastic = Elasticsearch([
         {'host': ELASTICSEARCH_HOST,
@@ -67,14 +67,14 @@ def clean_elasticsearch(connection, is_dryrun):
     records = query_response['hits']['hits']
     for record in records:
         # If social/friends, id is source_target
-        user_id = record['_id']
-        es_username = record['username']
+        user_id = record['_source']['target']
+        es_username = record['_source']['target_data']['username']
         statement = 'SELECT username FROM tblUsers WHERE id = %s'
-        cursor.execute(statement, (user_id))
+        cursor.execute(statement, [user_id])
         rows = cursor.fetchall()
         db_username = None
         for row in rows:
-            db_username = row['username']
+            db_username = row[0]
         if not db_username or (es_username != db_username):
             delete_from_elasticsearch(user_id, es_username, is_dryrun)
 
@@ -82,6 +82,7 @@ def clean_elasticsearch(connection, is_dryrun):
 def delete_from_elasticsearch(user_id, username, is_dryrun):
     indexes = ['contact_lists', 'social']
     query = {
+        'from': 0, 'size': 50,
         'query': {
             'term': {'id': user_id}
         },
@@ -93,8 +94,8 @@ def delete_from_elasticsearch(user_id, username, is_dryrun):
     query_response = elastic.search(index=indexes, body=query)
     records = query_response['hits']['hits']
     LOGGER.info(
-        'Deleteing the following records from Elasticsearch pertaining to '
-        'user \'%s\' (%s): %s', username, user_id, records)
+        'Deleting the following records from Elasticsearch pertaining to '
+        'user \'%s\' (%s):', username, user_id)
     for record in records:
         delete_response = {}
         if not is_dryrun:
