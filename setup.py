@@ -21,6 +21,7 @@ setup(
         'wsgiref>=0.1.2'],
     entry_points={'console_scripts': [
         'delete-user = bimadmin.selfieclub.deleteuser:main',
+        'clean-elastic = bimadmin.selfieclub.cleanelastic:main',
         'create_ec2_instance_alarms = bimadmin.aws.cloudwatch.ec2:create',
         'create_elasticache_instance_alarms = bimadmin.aws.cloudwatch.elasticache:create',  # noqa
         'create_elb_alarms = bimadmin.aws.cloudwatch.elb:create',
