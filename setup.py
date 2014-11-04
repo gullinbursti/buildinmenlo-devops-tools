@@ -1,11 +1,12 @@
 from os import path
-from setuptools import setup
+from setuptools import setup, find_packages
 
 setup(
     name='buildinmenlo-devops-tools',
     version='0.3.1',
     author='Pedro H',
     author_email='pedro@builtinmenlo.com',
+    packages=find_packages('.'),
     install_requires=[
         'MySQL-python>=1.2.5',
         'Padding>=0.4',
